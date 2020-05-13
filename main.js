@@ -24,6 +24,7 @@ if (config.openBrowserOnStart) {
 let proxyClient; // a reference to the client that is the actual minecraft game
 let client; // the client to connect to 2b2t
 let server; // the minecraft server to pass packets
+let currentSession; // Save the session to avoid re-authing every time we try to reconnect
 
 // function to disconnect from the server
 function stop(){
@@ -46,14 +47,20 @@ function startQueuing() {
 		port: 25565,
 		username: secrets.username,
 		password: secrets.password,
-		version: config.MCversion
+		version: config.MCversion,
+		session: currentSession,
 	});
 	let finishedQueue = false;
+	client.on("session", (ses) => {
+		currentSession = ses;
+		console.log(Date.now(), 'session set');
+	});
 	client.on("packet", (data, meta) => { // each time 2b2t sends a packet
 		if (!finishedQueue && meta.name === "playerlist_header") { // if the packet contains the player list, we can use it to see our place in the queue
 			let headermessage = JSON.parse(data.header);
 			let positioninqueue = headermessage.text.split("\n")[5].substring(25);
 			let ETA = headermessage.text.split("\n")[6].substring(27);
+			console.log(Date.now(), positioninqueue);
 			webserver.queuePlace = positioninqueue; // update info on the web page
 			webserver.ETA = ETA;
 			server.motd = `Place in queue: ${positioninqueue}`; // set the MOTD because why not
@@ -65,6 +72,7 @@ function startQueuing() {
 			// we need to know if we finished the queue otherwise we crash when we're done, because the queue info is no longer in packets the server sends us.
 			let chatMessage = JSON.parse(data.message);
 			if (chatMessage.text && chatMessage.text === "Connecting to the server...") {
+				console.log(Date.now(), 'finished queue');
                 if (webserver.restartQueue && proxyClient == null) { //if we have no client connected and we should restart
                     stop();
                     setTimeout(startQueuing, 100); // reconnect after 100 ms
@@ -87,8 +95,9 @@ function startQueuing() {
             proxyClient.end("Connection reset by 2b2t server.\nReconnecting...");
             proxyClient = null
 		}
+		console.log(Date.now(), 'Connection reset by 2b2t server, reconnecting...');
 		stop();
-		// setTimeout(startQueuing, 100); // reconnect after 100 ms
+		setTimeout(startQueuing, 1000); // reconnect after 1 s
 	});
 
 	client.on('error', (err) => {

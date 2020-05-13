@@ -9,10 +9,12 @@ const config = require('./config.json'); // read the config
 webserver.createServer(config.ports.web); // create the webserver
 webserver.password = config.password
 webserver.onstart(() => { // set up actions for the webserver
+	stopRequested = false;
 	startQueuing();
 });
 webserver.onstop(() => {
 	console.log(Date.now(), 'webserver.onstop()');
+	stopRequested = true;
 	stop();
 });
 
@@ -25,10 +27,11 @@ if (config.openBrowserOnStart) {
 let proxyClient; // a reference to the client that is the actual minecraft game
 let client; // the client to connect to 2b2t
 let server; // the minecraft server to pass packets
+let reconnectIntervalObj;
 let currentSession; // Save the session to avoid re-authing every time we try to reconnect
 
 // function to disconnect from the server
-function stop(){
+function stop() {
 	console.log(Date.now(), 'stop()');
 	webserver.isInQueue = false;
 	webserver.queuePlace = "None";
@@ -38,6 +41,25 @@ function stop(){
 		proxyClient.end("Stopped the proxy."); // boot the player from the server
 	}
 	server.close(); // close the server
+}
+function reconnect() {
+	console.log("Trying to reconnect");
+	if (proxyClient) {
+		proxyClient.end("Stopped the proxy."); // boot the player from the server
+	}
+	server.close(); // close the server
+	startQueuing();
+}
+function QueueReconnect() {
+	if (stopRequested) {
+		console.log(Date.now(), 'QueueReconnect() stopRequested');
+	} else {
+		console.log(Date.now(), 'QueueReconnect() stop not requested');
+	}
+	clearInterval(reconnectIntervalObj);
+	reconnectIntervalObj = null;
+
+	reconnectIntervalObj = setTimeout(reconnect, 100); // reconnect after 100 ms
 }
 
 // function to start the whole thing
@@ -99,8 +121,8 @@ function startQueuing() {
             proxyClient = null
 		}
 		console.log(Date.now(), 'Connection reset by 2b2t server, reconnecting...');
-		stop();
-		setTimeout(startQueuing, 1000); // reconnect after 1 s
+		//stop();
+		QueueReconnect();
 	});
 
 	client.on('error', (err) => {

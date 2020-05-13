@@ -6,17 +6,14 @@ const opn = require('opn'); //to open a browser window
 const secrets = require('./secrets.json'); // read the creds
 const config = require('./config.json'); // read the config
 
-let stopRequested = false;
-
 webserver.createServer(config.ports.web); // create the webserver
 webserver.password = config.password
 webserver.onstart(() => { // set up actions for the webserver
 	startQueuing();
 });
 webserver.onstop(() => {
-	stopRequested = true;
+	console.log(Date.now(), 'webserver.onstop()');
 	stop();
-	stopRequested = false;
 });
 
 if (config.openBrowserOnStart) {
@@ -32,6 +29,7 @@ let currentSession; // Save the session to avoid re-authing every time we try to
 
 // function to disconnect from the server
 function stop(){
+	console.log(Date.now(), 'stop()');
 	webserver.isInQueue = false;
 	webserver.queuePlace = "None";
 	webserver.ETA = "None";
@@ -95,18 +93,14 @@ function startQueuing() {
 
 	// set up actions in case we get disconnected.
 	client.on('end', () => {
+		console.log(Date.now(), 'client.on(end)');
 		if (proxyClient) {
             proxyClient.end("Connection reset by 2b2t server.\nReconnecting...");
             proxyClient = null
 		}
 		console.log(Date.now(), 'Connection reset by 2b2t server, reconnecting...');
 		stop();
-		if (stopRequested) {
-			console.log(Date.now(), 'Not reconnecting');
-		} else {
-			console.log(Date.now(), 'Reconnecting');
-			setTimeout(startQueuing, 1000); // reconnect after 1 s
-		}
+		setTimeout(startQueuing, 1000); // reconnect after 1 s
 	});
 
 	client.on('error', (err) => {

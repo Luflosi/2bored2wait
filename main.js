@@ -6,13 +6,17 @@ const opn = require('opn'); //to open a browser window
 const secrets = require('./secrets.json'); // read the creds
 const config = require('./config.json'); // read the config
 
+let stopRequested = false;
+
 webserver.createServer(config.ports.web); // create the webserver
 webserver.password = config.password
 webserver.onstart(() => { // set up actions for the webserver
 	startQueuing();
 });
 webserver.onstop(() => {
+	stopRequested = true;
 	stop();
+	stopRequested = false;
 });
 
 if (config.openBrowserOnStart) {
@@ -97,7 +101,12 @@ function startQueuing() {
 		}
 		console.log(Date.now(), 'Connection reset by 2b2t server, reconnecting...');
 		stop();
-		setTimeout(startQueuing, 1000); // reconnect after 1 s
+		if (stopRequested) {
+			console.log(Date.now(), 'Not reconnecting');
+		} else {
+			console.log(Date.now(), 'Reconnecting');
+			setTimeout(startQueuing, 1000); // reconnect after 1 s
+		}
 	});
 
 	client.on('error', (err) => {

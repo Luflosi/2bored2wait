@@ -53,6 +53,7 @@ function reconnect() {
 function QueueReconnect() {
 	if (stopRequested) {
 		console.log(Date.now(), 'QueueReconnect() stopRequested');
+		return;
 	} else {
 		console.log(Date.now(), 'QueueReconnect() stop not requested');
 	}

@@ -85,7 +85,7 @@ function startQueuing() {
 			let headermessage = JSON.parse(data.header);
 			let positioninqueue = "err";
 			try {
-				let positioninqueue = headermessage.text.split("\n")[5].substring(25);
+				positioninqueue = headermessage.text.split("\n")[5].substring(25);
 			} catch {}
 			let ETA = headermessage.text.split("\n")[6].substring(27);
 			console.log(Date.now(), positioninqueue);

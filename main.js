@@ -83,7 +83,10 @@ function startQueuing() {
 	client.on("packet", (data, meta) => { // each time 2b2t sends a packet
 		if (!finishedQueue && meta.name === "playerlist_header") { // if the packet contains the player list, we can use it to see our place in the queue
 			let headermessage = JSON.parse(data.header);
-			let positioninqueue = headermessage.text.split("\n")[5].substring(25);
+			let positioninqueue = None;
+			try {
+				let positioninqueue = headermessage.text.split("\n")[5].substring(25);
+			} catch {}
 			let ETA = headermessage.text.split("\n")[6].substring(27);
 			console.log(Date.now(), positioninqueue);
 			webserver.queuePlace = positioninqueue; // update info on the web page

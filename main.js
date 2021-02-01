@@ -228,14 +228,16 @@ function join() {
 		}
 	});
 
-	server = mc.createServer({ // create a server for us to connect to
-		'online-mode': config.whitelist,
-		encryption: true,
-		host: '0.0.0.0',
-		port: config.ports.minecraft,
-		version: config.MCversion,
-		'max-players': maxPlayers = 1
-	});
+	if (server == null) {
+		server = mc.createServer({ // create a server for us to connect to
+			'online-mode': config.whitelist,
+			encryption: true,
+			host: '0.0.0.0',
+			port: config.ports.minecraft,
+			version: config.MCversion,
+			'max-players': maxPlayers = 1
+		});
+	}
 
 	server.on('login', (newProxyClient) => { // handle login
 		if(config.whitelist && client.uuid !== newProxyClient.uuid) {

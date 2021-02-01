@@ -72,6 +72,7 @@ try {
 }
 
 var stoppedByPlayer = false;
+var reconnectPlanned = false;
 var timedStart;
 var positioninqueue = lastQueuePlace + 1;
 var lastQueuePlace;
@@ -212,7 +213,7 @@ function join() {
 		}
 		stop();
 		if (!stoppedByPlayer) log("Connection reset by 2b2t server. Reconnecting...");
-		if (config.reconnect.onError) setTimeout(reconnect, 6000);
+		if (config.reconnect.onError) planReconnect(6000);
 	});
 
 	client.on('error', (err) => {
@@ -223,8 +224,8 @@ function join() {
 		stop();
 		log(`Connection error by 2b2t server. Error message: ${err} Reconnecting...`);
 		if (config.reconnect.onError) {
-			if (err == "Error: Invalid credentials. Invalid username or password.") setTimeout(reconnect, 60000);
-			else setTimeout(reconnect, 4000);
+			if (err == "Error: Invalid credentials. Invalid username or password.") planReconnect(60000);
+			else planReconnect(4000);
 		}
 	});
 
@@ -267,7 +268,15 @@ function log(logmsg) {
 	process.stdout.write("\033[F\n" + logmsg + "\n$ " + line);
 }
 
+function planReconnect(timeout) {
+	if (!reconnectPlanned) {
+		reconnectPlanned = true;
+		setTimeout(reconnect, timeout);
+	}
+}
+
 function reconnect() {
+	reconnectPlanned = false;
 	doing = "reconnect";
 	if (stoppedByPlayer) stoppedByPlayer = false;
 	else {

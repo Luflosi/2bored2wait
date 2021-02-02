@@ -128,7 +128,6 @@ function stop() {
 	if (proxyClient) {
 		proxyClient.end("Stopped the proxy."); // boot the player from the server
 	}
-	server.close(); // close the server
 }
 
 // function to start the whole thing
